@@ -3,9 +3,9 @@ pipeline {
 
     environment {
         AWS_REGION         = 'ap-south-1'
-        ECR_REGISTRY       = '<your-account-id>.dkr.ecr.ap-south-1.amazonaws.com'
-        PRIVATE_EC2_IP     = '<your-private-ec2-ip>'
-        S3_BUCKET          = 'project-frontend-<your-account-id>'
+        ECR_REGISTRY       = '483591406306.dkr.ecr.ap-south-1.amazonaws.com'
+        PRIVATE_EC2_IP     = '10.0.2.158'
+        S3_BUCKET          = 'project-frontend-483591406306'
         IMAGE_TAG          = "${BUILD_NUMBER}"
     }
 
