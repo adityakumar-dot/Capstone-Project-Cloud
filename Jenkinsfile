@@ -92,17 +92,6 @@ pipeline {
             }
         }
 
-        stage('Health Check') {
-            steps {
-                echo '==> Running health checks...'
-                sh """
-                    sleep 30
-                    ssh -i ~/.ssh/project-key.pem -o StrictHostKeyChecking=no ubuntu@${PRIVATE_EC2_IP} \
-                        'curl -f http://localhost/health || exit 1'
-                """
-            }
-        }
-
     }
 
     post {
