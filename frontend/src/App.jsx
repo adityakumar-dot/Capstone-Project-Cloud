@@ -12,7 +12,7 @@ const BackendSelector = () => {
   );
 
   const backends = [
-    { id: "round-robin", name: "Round Robin new", desc: "Load Balanced", icon: "" },
+    { id: "round-robin", name: "Round Robin ratnapal", desc: "Load Balanced", icon: "" },
     { id: "fastapi", name: "FastAPI", desc: "Python Fast", icon: "" },
     { id: "nodejs", name: "Node.js", desc: "V8 Runtime", icon: "" },
     { id: "django", name: "Django", desc: "Secure Py", icon: "" },
