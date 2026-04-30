@@ -12,11 +12,11 @@ const BackendSelector = () => {
   );
 
   const backends = [
-    { id: "round-robin", name: "Round Robin", desc: "Load Balanced", icon: "" },
-    { id: "fastapi", name: "FastAPI", desc: "Python Fast", icon: "" },
-    { id: "nodejs", name: "Node.js", desc: "V8 Runtime", icon: "" },
-    { id: "django", name: "Django", desc: "Secure Py", icon: "" },
-    { id: "dotnet", name: ".NET Core", desc: "C# WebAPI", icon: "" },
+    { id: "round-robin", name: "Round Robin 2", desc: "Load Balanced", icon: "" },
+    { id: "fastapi", name: "FastAPI 2", desc: "Python Fast", icon: "" },
+    { id: "nodejs", name: "Node.js 2", desc: "V8 Runtime", icon: "" },
+    { id: "django", name: "Django 2", desc: "Secure Py", icon: "" },
+    { id: "dotnet", name: ".NET Core 2", desc: "C# WebAPI", icon: "" },
   ];
 
   const handleSelect = (id) => {
