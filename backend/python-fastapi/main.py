@@ -301,5 +301,3 @@ def dashboard(current_user: dict = Depends(get_current_user)):
             "server_status": "All systems operational",
         },
     }
-
-ratnapal, soheib sdojsdoksdiohdsiondsokfdsnf
