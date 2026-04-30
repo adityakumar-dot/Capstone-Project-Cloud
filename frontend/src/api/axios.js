@@ -1,7 +1,11 @@
 import axios from "axios";
 
+// const API = axios.create({
+//   baseURL: import.meta.env.VITE_API_BASE_URL, 
+// });
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL, 
+  baseURL: "http://project-alb-295252674.ap-south-1.elb.amazonaws.com", 
 });
 
 API.interceptors.request.use((req) => {
