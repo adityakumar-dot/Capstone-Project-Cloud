@@ -75,7 +75,7 @@ pipeline {
 
         stage('Copy Config Files to EC2') {
             steps {
-                echo '==> Copying nginx.conf, docker-compose.yaml and monitoring folder to EC2...'
+                echo '==> Copying nginx.conf, compose.yaml and monitoring folder to EC2...'
                 sshagent(credentials: ['backend-ssh-key']) {
                     sh """
                         # Create project directories on EC2
@@ -89,8 +89,8 @@ pipeline {
 
                         # Copy docker compose
                         scp -o StrictHostKeyChecking=no \
-                            docker-compose.yaml \
-                            ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/docker-compose.yaml
+                            compose.yaml \
+                            ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/compose.yaml
 
                         # Copy monitoring folder (prometheus, grafana configs)
                         scp -o StrictHostKeyChecking=no -r \
