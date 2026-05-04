@@ -61,7 +61,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: cloud3tier-nginx
+    container_name: nginx
     restart: unless-stopped
     ports:
       - "80:80"
