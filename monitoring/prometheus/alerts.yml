@@ -2,13 +2,24 @@ groups:
   - name: instance_health
     interval: 30s
     rules:
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Instance {{ $labels.instance }} is down"
+          description: "The service {{ $labels.job }} has been unreachable for 1 minute."
+
       - alert: HighCPUUsage
         expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
         for: 5m
         labels:
           severity: warning
+          component: host
         annotations:
-          summary: "High CPU detected on EC2"
+          summary: "High CPU detected on {{ $labels.instance }}"
           description: "CPU usage is above 80% (current: {{ $value }}%) for 5 minutes."
 
       - alert: HighMemoryUsage
@@ -16,33 +27,37 @@ groups:
         for: 5m
         labels:
           severity: critical
+          component: host
         annotations:
-          summary: "High Memory usage"
-          description: "Memory usage is above 90%."
+          summary: "High Memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 90% (current: {{ $value }}%)."
 
-      - alert: InstanceDown
-        expr: up == 0
-        for: 1m
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 5m
         labels:
-          severity: critical
+          severity: warning
+          component: storage
         annotations:
-          summary: "Instance {{ $labels.instance }} is down"
-          description: "The service has been unreachable for 1 minute."
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk space is below 15% (current: {{ $value }}%)."
 
-      - alert: APIHighLatency
+      - alert: HighAPILatency
         expr: histogram_quantile(0.99, sum(rate(nginx_http_request_duration_seconds_bucket[5m])) by (le)) > 1
         for: 2m
         labels:
           severity: warning
+          component: api
         annotations:
-          summary: "API latency is high"
-          description: "99th percentile latency is above 1 second."
+          summary: "High API latency detected"
+          description: "99th percentile latency is above 1 second (current: {{ $value }}s)."
 
-      - alert: HighAPILatency
-        expr: histogram_quantile(0.95, sum(rate(nginx_http_request_duration_seconds_bucket[5m])) by (le)) > 0.5
-        for: 5m
+      - alert: BackendServiceDown
+        expr: up{job="backend_services"} == 0
+        for: 30s
         labels:
-          severity: info
+          severity: critical
+          component: backend
         annotations:
-          summary: "API response time increasing"
-          description: "95th percentile latency is above 500ms."
+          summary: "Backend service {{ $labels.instance }} is down"
+          description: "The backend service has been unreachable for 30 seconds."
