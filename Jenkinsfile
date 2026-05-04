@@ -72,38 +72,10 @@ pipeline {
             steps {
                 sshagent(credentials: ['backend-ssh-key']) {
                     sh """
-ssh -o StrictHostKeyChecking=no ubuntu@${PRIVATE_EC2_IP} << 'ENDSSH'
-set -e
-mkdir -p ${PROJECT_DIR}/monitoring/prometheus
-mkdir -p ${PROJECT_DIR}/monitoring/alertmanager
-mkdir -p ${PROJECT_DIR}/monitoring/grafana/provisioning/dashboards
-mkdir -p ${PROJECT_DIR}/monitoring/grafana/provisioning/datasources
-
-rm -rf ${PROJECT_DIR}/monitoring/prometheus/prometheus.yml || true
-rm -rf ${PROJECT_DIR}/monitoring/prometheus/alerts.yml || true
-rm -rf ${PROJECT_DIR}/monitoring/alertmanager/alertmanager.yml || true
-rm -rf ${PROJECT_DIR}/monitoring/grafana/provisioning/datasources/prometheus.yml || true
-rm -rf ${PROJECT_DIR}/monitoring/grafana/provisioning/dashboards/default.yml || true
-
-echo "==> Directories ready"
-ENDSSH
-
-scp -o StrictHostKeyChecking=no nginx.conf ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/nginx.conf
-scp -o StrictHostKeyChecking=no compose.yaml ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/compose.yaml
-
-scp -o StrictHostKeyChecking=no monitoring/prometheus/prometheus.yml ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/monitoring/prometheus/prometheus.yml
-scp -o StrictHostKeyChecking=no monitoring/prometheus/alerts.yml ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/monitoring/prometheus/alerts.yml
-
-scp -o StrictHostKeyChecking=no monitoring/alertmanager/alertmanager.yml ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/monitoring/alertmanager/alertmanager.yml
-
-scp -o StrictHostKeyChecking=no monitoring/grafana/provisioning/datasources/prometheus.yml ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/monitoring/grafana/provisioning/datasources/prometheus.yml
-
-scp -o StrictHostKeyChecking=no monitoring/grafana/provisioning/dashboards/default.yml ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/monitoring/grafana/provisioning/dashboards/default.yml
-
-scp -o StrictHostKeyChecking=no monitoring/grafana/provisioning/dashboards/*.json ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/monitoring/grafana/provisioning/dashboards/
-
-echo "==> All files copied successfully"
-"""
+                        scp -r -o StrictHostKeyChecking=no \
+                            compose.yaml nginx.conf monitoring \
+                            ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/
+                    """
                 }
             }
         }
@@ -112,22 +84,24 @@ echo "==> All files copied successfully"
             steps {
                 sshagent(credentials: ['backend-ssh-key']) {
                     sh """
-ssh -o StrictHostKeyChecking=no ubuntu@${PRIVATE_EC2_IP} << EOF
-set -e
+                        ssh -o StrictHostKeyChecking=no ubuntu@${PRIVATE_EC2_IP} << EOF
+        set -e
 
-aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+        aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
 
-cd ${PROJECT_DIR}
-docker compose down
-docker compose up -d
+        sed -i "s|IMAGE_TAG=.*|IMAGE_TAG=${IMAGE_TAG}|" ${PROJECT_DIR}/.env
+        sed -i "s|ECR_REGISTRY=.*|ECR_REGISTRY=${ECR_REGISTRY}|" ${PROJECT_DIR}/.env
 
-docker compose ps
-EOF
-"""
+        cd ${PROJECT_DIR}
+        docker compose down
+        docker compose up -d
+
+        echo "==> Deploy complete: ${IMAGE_TAG}"
+        EOF
+                    """
                 }
             }
         }
-    }
 
     post {
         always {
