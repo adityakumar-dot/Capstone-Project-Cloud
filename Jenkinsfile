@@ -93,7 +93,6 @@ sed -i "s|IMAGE_TAG=.*|IMAGE_TAG=${IMAGE_TAG}|" ${PROJECT_DIR}/.env
 sed -i "s|ECR_REGISTRY=.*|ECR_REGISTRY=${ECR_REGISTRY}|" ${PROJECT_DIR}/.env
 
 cd ${PROJECT_DIR}
-docker compose down
 docker compose up -d
 
 echo "==> Deploy complete: ${IMAGE_TAG}"

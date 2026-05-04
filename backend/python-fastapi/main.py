@@ -174,7 +174,7 @@ def health_check():
     Returns 200 if service is healthy.
     """
     return {
-        "status": "healthy fastapi changes reflecting",
+        "status": "healthy fastapi changes reflecting after removing compose-down",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "version": "1.0.0",
         "service": "python-fastapi",
