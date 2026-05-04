@@ -94,7 +94,7 @@ sed -i "s|ECR_REGISTRY=.*|ECR_REGISTRY=${ECR_REGISTRY}|" ${PROJECT_DIR}/.env
 
 cd ${PROJECT_DIR}
 docker compose up -d
-
+docker exec nginx nginx -s reload
 echo "==> Deploy complete: ${IMAGE_TAG}"
 EOF
 """
