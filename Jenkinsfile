@@ -78,24 +78,68 @@ pipeline {
                 echo '==> Copying nginx.conf, compose.yaml and monitoring folder to EC2...'
                 sshagent(credentials: ['backend-ssh-key']) {
                     sh """
-                        # Create project directories on EC2
-                        ssh -o StrictHostKeyChecking=no ubuntu@${PRIVATE_EC2_IP} \
-                            'mkdir -p ${PROJECT_DIR}/monitoring'
+                        # ── 1. Create ALL required directories explicitly ──────────────
+                        ssh -o StrictHostKeyChecking=no ubuntu@${PRIVATE_EC2_IP} '
+                            mkdir -p ${PROJECT_DIR}/monitoring/prometheus
+                            mkdir -p ${PROJECT_DIR}/monitoring/alertmanager
+                            mkdir -p ${PROJECT_DIR}/monitoring/grafana/provisioning/dashboards
+                            mkdir -p ${PROJECT_DIR}/monitoring/grafana/provisioning/datasources
 
-                        # Copy nginx config
+                            # Remove any wrongly-created directories in place of files
+                            # (happens when Docker creates dirs because files were missing)
+                            [ -d ${PROJECT_DIR}/monitoring/prometheus/prometheus.yml ] && rm -rf ${PROJECT_DIR}/monitoring/prometheus/prometheus.yml
+                            [ -d ${PROJECT_DIR}/monitoring/prometheus/alerts.yml ]     && rm -rf ${PROJECT_DIR}/monitoring/prometheus/alerts.yml
+                            [ -d ${PROJECT_DIR}/monitoring/alertmanager/alertmanager.yml ] && rm -rf ${PROJECT_DIR}/monitoring/alertmanager/alertmanager.yml
+                            [ -d ${PROJECT_DIR}/monitoring/grafana/provisioning/datasources/prometheus.yml ] && rm -rf ${PROJECT_DIR}/monitoring/grafana/provisioning/datasources/prometheus.yml
+                            [ -d ${PROJECT_DIR}/monitoring/grafana/provisioning/dashboards/default.yml ]     && rm -rf ${PROJECT_DIR}/monitoring/grafana/provisioning/dashboards/default.yml
+                        '
+
+                        # ── 2. Copy nginx config ──────────────────────────────────────
                         scp -o StrictHostKeyChecking=no \
                             nginx.conf \
                             ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/nginx.conf
 
-                        # Copy docker compose
+                        # ── 3. Copy docker compose ────────────────────────────────────
                         scp -o StrictHostKeyChecking=no \
                             compose.yaml \
                             ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/compose.yaml
 
-                        # Copy monitoring folder (prometheus, grafana configs)
-                        scp -o StrictHostKeyChecking=no -r \
-                            monitoring/ \
-                            ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/monitoring/
+                        # ── 4. Copy prometheus configs (files explicitly) ──────────────
+                        scp -o StrictHostKeyChecking=no \
+                            monitoring/prometheus/prometheus.yml \
+                            ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/monitoring/prometheus/prometheus.yml
+
+                        scp -o StrictHostKeyChecking=no \
+                            monitoring/prometheus/alerts.yml \
+                            ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/monitoring/prometheus/alerts.yml
+
+                        # ── 5. Copy alertmanager config ───────────────────────────────
+                        scp -o StrictHostKeyChecking=no \
+                            monitoring/alertmanager/alertmanager.yml \
+                            ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/monitoring/alertmanager/alertmanager.yml
+
+                        # ── 6. Copy grafana datasources ───────────────────────────────
+                        scp -o StrictHostKeyChecking=no \
+                            monitoring/grafana/provisioning/datasources/prometheus.yml \
+                            ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/monitoring/grafana/provisioning/datasources/prometheus.yml
+
+                        # ── 7. Copy grafana dashboard provisioning yml ─────────────────
+                        scp -o StrictHostKeyChecking=no \
+                            monitoring/grafana/provisioning/dashboards/default.yml \
+                            ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/monitoring/grafana/provisioning/dashboards/default.yml
+
+                        # ── 8. Copy grafana dashboard json files ──────────────────────
+                        scp -o StrictHostKeyChecking=no \
+                            monitoring/grafana/provisioning/dashboards/custom-services.json \
+                            ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/monitoring/grafana/provisioning/dashboards/custom-services.json
+
+                        scp -o StrictHostKeyChecking=no \
+                            monitoring/grafana/provisioning/dashboards/nginx-prometheus.json \
+                            ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/monitoring/grafana/provisioning/dashboards/nginx-prometheus.json
+
+                        scp -o StrictHostKeyChecking=no \
+                            monitoring/grafana/provisioning/dashboards/node-exporter-full.json \
+                            ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/monitoring/grafana/provisioning/dashboards/node-exporter-full.json
                     """
                 }
             }
