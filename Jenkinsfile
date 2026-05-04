@@ -83,22 +83,22 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 sshagent(credentials: ['backend-ssh-key']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ubuntu@${PRIVATE_EC2_IP} << EOF
-        set -e
+sh """
+    ssh -o StrictHostKeyChecking=no ubuntu@${PRIVATE_EC2_IP} << EOF
+set -e
 
-        aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
 
-        sed -i "s|IMAGE_TAG=.*|IMAGE_TAG=${IMAGE_TAG}|" ${PROJECT_DIR}/.env
-        sed -i "s|ECR_REGISTRY=.*|ECR_REGISTRY=${ECR_REGISTRY}|" ${PROJECT_DIR}/.env
+sed -i "s|IMAGE_TAG=.*|IMAGE_TAG=${IMAGE_TAG}|" ${PROJECT_DIR}/.env
+sed -i "s|ECR_REGISTRY=.*|ECR_REGISTRY=${ECR_REGISTRY}|" ${PROJECT_DIR}/.env
 
-        cd ${PROJECT_DIR}
-        docker compose down
-        docker compose up -d
+cd ${PROJECT_DIR}
+docker compose down
+docker compose up -d
 
-        echo "==> Deploy complete: ${IMAGE_TAG}"
-        EOF
-                    """
+echo "==> Deploy complete: ${IMAGE_TAG}"
+EOF
+"""
                 }
             }
         }
