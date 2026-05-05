@@ -5,60 +5,88 @@ global:
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: ['alertmanager:9093']
+        - targets: ['cloud3tier-alertmanager:9093']
 
 rule_files:
-  - 'alerts.yml'
+  - '/etc/prometheus/alerts.yml'
 
 scrape_configs:
 
-  # EC2 host metrics (CPU, Memory, Disk)
   - job_name: 'node-exporter'
     static_configs:
-      - targets: ['node-exporter:9100']
+      - targets: ['cloud3tier-node-exporter:9100']
         labels:
           instance: 'backend-ec2'
 
-  # Container metrics (all running containers)
   - job_name: 'cadvisor'
     static_configs:
-      - targets: ['cadvisor:8081']
+      - targets: ['cloud3tier-cadvisor:8080']
         labels:
           instance: 'backend-ec2'
 
-  # FastAPI health
-  - job_name: 'fastapi'
-    metrics_path: '/health/live'
+  - job_name: 'nginx'
     static_configs:
-      - targets: ['python-fastapi:8000']
+      - targets: ['cloud3tier-nginx-exporter:9113']
         labels:
-          service: 'fastapi'
+          instance: 'backend-ec2'
 
-  # Node.js health
-  - job_name: 'nodejs'
-    metrics_path: '/health/live'
-    static_configs:
-      - targets: ['nodejs:3000']
-        labels:
-          service: 'nodejs'
-
-  # Django health
-  - job_name: 'django'
-    metrics_path: '/health/live'
-    static_configs:
-      - targets: ['python-django:8001']
-        labels:
-          service: 'django'
-
-  # .NET health
-  - job_name: 'dotnet'
-    metrics_path: '/health/live'
-    static_configs:
-      - targets: ['dotnet-webapi:5000']
-        labels:
-          service: 'dotnet'
-
-  # Prometheus self
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
+
+  # ── Service UP/DOWN via blackbox-style HTTP probe ──────────────
+  - job_name: 'fastapi'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets: ['http://cloud3tier-fastapi:8000/health']
+        labels:
+          service: 'fastapi'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: cloud3tier-blackbox:9115
+
+  - job_name: 'nodejs'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets: ['http://cloud3tier-nodejs:3000/health/live']
+        labels:
+          service: 'nodejs'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: cloud3tier-blackbox:9115
+
+  - job_name: 'django'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets: ['http://cloud3tier-django:8001/health/live']
+        labels:
+          service: 'django'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: cloud3tier-blackbox:9115
+
+  - job_name: 'dotnet'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets: ['http://cloud3tier-dotnet:5000/health/live']
+        labels:
+          service: 'dotnet'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: cloud3tier-blackbox:9115

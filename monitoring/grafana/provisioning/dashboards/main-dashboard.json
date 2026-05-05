@@ -48,21 +48,27 @@
         }
       }
     },
-    {
-      "id": 3,
-      "title": "Services Health Status",
-      "type": "stat",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
-      "targets": [
-        {"expr": "up{job='fastapi'}", "legendFormat": "FastAPI"},
-        {"expr": "up{job='nodejs'}", "legendFormat": "Node.js"},
-        {"expr": "up{job='django'}", "legendFormat": "Django"},
-        {"expr": "up{job='dotnet'}", "legendFormat": ".NET"}
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {"type": "value", "options": {"0": {"text": "DOWN", "color": "red"}, "1": {"text": "UP", "color": "green"}}}
+ {
+  "id": 3,
+  "title": "Services Health Status",
+  "type": "stat",
+  "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+  "targets": [
+    {"expr": "probe_success{job='fastapi'}", "legendFormat": "FastAPI"},
+    {"expr": "probe_success{job='nodejs'}", "legendFormat": "Node.js"},
+    {"expr": "probe_success{job='django'}", "legendFormat": "Django"},
+    {"expr": "probe_success{job='dotnet'}", "legendFormat": ".NET"}
+  ],
+  "fieldConfig": {
+    "defaults": {
+      "mappings": [
+        {
+          "type": "value",
+          "options": {
+            "0": {"text": "DOWN", "color": "red"},
+            "1": {"text": "UP", "color": "green"}
+          }
+        }
           ]
         }
       }

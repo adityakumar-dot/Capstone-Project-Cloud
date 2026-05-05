@@ -183,6 +183,15 @@ services:
     networks:
       - monitoring
 
+  blackbox:
+    image: prom/blackbox-exporter:latest
+    container_name: cloud3tier-blackbox
+    restart: unless-stopped
+    ports:
+      - "9115:9115"
+    networks:
+      - monitoring
+
 networks:
   monitoring:
     driver: bridge
