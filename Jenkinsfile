@@ -102,18 +102,18 @@ EOF
             }
         }
 
-        stage('Start Monitoring') {
-            steps {
-                sshagent(credentials: ['backend-ssh-key']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ubuntu@${PRIVATE_EC2_IP} '
-                            cd ${PROJECT_DIR} &&
-                            docker compose -f docker-compose.monitoring.yml up -d
-                        '
-                    """
-                }
-            }
-        }
+        // stage('Start Monitoring') {
+        //     steps {
+        //         sshagent(credentials: ['backend-ssh-key']) {
+        //             sh """
+        //                 ssh -o StrictHostKeyChecking=no ubuntu@${PRIVATE_EC2_IP} '
+        //                     cd ${PROJECT_DIR} &&
+        //                     docker compose -f docker-compose.monitoring.yml up -d
+        //                 '
+        //             """
+        //         }
+        //     }
+        // }
 
     }
 
