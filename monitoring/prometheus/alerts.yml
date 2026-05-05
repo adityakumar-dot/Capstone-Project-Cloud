@@ -1,63 +1,61 @@
 groups:
-  - name: instance_health
-    interval: 30s
+  - name: ec2_alerts
     rules:
-      - alert: InstanceDown
-        expr: up == 0
-        for: 1m
-        labels:
-          severity: critical
-          component: infrastructure
-        annotations:
-          summary: "Instance {{ $labels.instance }} is down"
-          description: "The service {{ $labels.job }} has been unreachable for 1 minute."
 
       - alert: HighCPUUsage
-        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
-        for: 5m
-        labels:
-          severity: warning
-          component: host
-        annotations:
-          summary: "High CPU detected on {{ $labels.instance }}"
-          description: "CPU usage is above 80% (current: {{ $value }}%) for 5 minutes."
-
-      - alert: HighMemoryUsage
-        expr: ((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes) * 100 > 90
-        for: 5m
-        labels:
-          severity: critical
-          component: host
-        annotations:
-          summary: "High Memory usage on {{ $labels.instance }}"
-          description: "Memory usage is above 90% (current: {{ $value }}%)."
-
-      - alert: DiskSpaceLow
-        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
-        for: 5m
-        labels:
-          severity: warning
-          component: storage
-        annotations:
-          summary: "Low disk space on {{ $labels.instance }}"
-          description: "Disk space is below 15% (current: {{ $value }}%)."
-
-      - alert: HighAPILatency
-        expr: histogram_quantile(0.99, sum(rate(nginx_http_request_duration_seconds_bucket[5m])) by (le)) > 1
+        expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 80
         for: 2m
         labels:
           severity: warning
-          component: api
         annotations:
-          summary: "High API latency detected"
-          description: "99th percentile latency is above 1 second (current: {{ $value }}s)."
+          summary: "EC2 CPU usage is above 80%"
+          description: "CPU has been above 80% for 2 minutes."
 
-      - alert: BackendServiceDown
-        expr: up{job="backend_services"} == 0
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "EC2 Memory usage above 85%"
+          description: "Memory has been above 85% for 2 minutes."
+
+  - name: container_alerts
+    rules:
+
+      - alert: ContainerDown
+        expr: absent(container_last_seen{name=~"cloud3tier.*"})
         for: 30s
         labels:
           severity: critical
-          component: backend
         annotations:
-          summary: "Backend service {{ $labels.instance }} is down"
-          description: "The backend service has been unreachable for 30 seconds."
+          summary: "Container {{ $labels.name }} is down"
+          description: "Container has not been seen for 30 seconds."
+
+      - alert: ContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total{name=~"cloud3tier.*"}[2m]) * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} CPU above 80%"
+
+      - alert: ContainerHighMemory
+        expr: (container_memory_usage_bytes{name=~"cloud3tier.*"} / container_spec_memory_limit_bytes{name=~"cloud3tier.*"}) * 100 > 85
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} memory above 85%"
+
+  - name: service_alerts
+    rules:
+
+      - alert: ServiceDown
+        expr: up{job=~"fastapi|nodejs|django|dotnet"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is DOWN"
+          description: "Service has been down for 30 seconds."

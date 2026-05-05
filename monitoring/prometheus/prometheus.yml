@@ -1,49 +1,64 @@
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
-  external_labels:
-    environment: 'production'
-    project: 'cloud3tier'
 
 alerting:
   alertmanagers:
     - static_configs:
         - targets: ['alertmanager:9093']
-      timeout: 10s
-      api_version: v2
 
 rule_files:
-  - "alerts.yml"
+  - 'alerts.yml'
 
 scrape_configs:
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: ['localhost:9090']
 
-  - job_name: 'node_exporter'
-    scrape_interval: 30s
+  # EC2 host metrics (CPU, Memory, Disk)
+  - job_name: 'node-exporter'
     static_configs:
       - targets: ['node-exporter:9100']
         labels:
-          service: 'host-metrics'
-          type: 'infrastructure'
+          instance: 'backend-ec2'
 
-  - job_name: 'nginx_exporter'
-    scrape_interval: 15s
+  # Container metrics (all running containers)
+  - job_name: 'cadvisor'
     static_configs:
-      - targets: ['nginx-exporter:9113']
+      - targets: ['cadvisor:8081']
         labels:
-          service: 'nginx'
-          type: 'web-server'
+          instance: 'backend-ec2'
 
-  - job_name: 'backend_services'
-    scrape_interval: 30s
-    metrics_path: '/metrics'
+  # FastAPI health
+  - job_name: 'fastapi'
+    metrics_path: '/health/live'
     static_configs:
-      - targets:
-        - 'python-fastapi:8000'
-        - 'nodejs:3000'
-        - 'python-django:8001'
-        - 'dotnet-webapi:5000'
+      - targets: ['python-fastapi:8000']
         labels:
-          tier: 'backend'
+          service: 'fastapi'
+
+  # Node.js health
+  - job_name: 'nodejs'
+    metrics_path: '/health/live'
+    static_configs:
+      - targets: ['nodejs:3000']
+        labels:
+          service: 'nodejs'
+
+  # Django health
+  - job_name: 'django'
+    metrics_path: '/health/live'
+    static_configs:
+      - targets: ['python-django:8001']
+        labels:
+          service: 'django'
+
+  # .NET health
+  - job_name: 'dotnet'
+    metrics_path: '/health/live'
+    static_configs:
+      - targets: ['dotnet-webapi:5000']
+        labels:
+          service: 'dotnet'
+
+  # Prometheus self
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

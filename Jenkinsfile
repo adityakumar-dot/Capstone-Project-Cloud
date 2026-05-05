@@ -83,7 +83,7 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 sshagent(credentials: ['backend-ssh-key']) {
-sh """
+                    sh """
     ssh -o StrictHostKeyChecking=no ubuntu@${PRIVATE_EC2_IP} << EOF
 set -e
 
@@ -101,6 +101,20 @@ EOF
                 }
             }
         }
+
+        stage('Start Monitoring') {
+            steps {
+                sshagent(credentials: ['backend-ssh-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ubuntu@${PRIVATE_EC2_IP} '
+                            cd ${PROJECT_DIR} &&
+                            docker compose -f docker-compose.monitoring.yml up -d
+                        '
+                    """
+                }
+            }
+        }
+
     }
 
     post {
