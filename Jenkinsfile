@@ -99,7 +99,7 @@ echo "==> Fetching secrets..."
 
 SECRET_JSON=$(aws secretsmanager get-secret-value \
     --region $AWS_REGION \
-    --secret-id project/prod/env \
+    --secret-id project/db-credentials \
     --query SecretString \
     --output text)
 
