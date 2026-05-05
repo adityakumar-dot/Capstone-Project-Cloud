@@ -84,7 +84,7 @@ pipeline {
             steps {
                 sshagent(credentials: ['backend-ssh-key']) {
                     sh '''
-ssh -o StrictHostKeyChecking=no ubuntu@''' + PRIVATE_EC2_IP + ''' << EOF
+ssh -o StrictHostKeyChecking=no ubuntu@''' + PRIVATE_EC2_IP + ''' << 'EOF'
 set -e
 
 AWS_REGION="''' + AWS_REGION + '''"
@@ -95,7 +95,7 @@ PROJECT_DIR="''' + PROJECT_DIR + '''"
 echo "==> Logging into ECR..."
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
-echo "==> Fetching secrets..."
+echo "==> Fetching secrets from AWS..."
 
 SECRET_JSON=$(aws secretsmanager get-secret-value \
     --region $AWS_REGION \
@@ -103,11 +103,17 @@ SECRET_JSON=$(aws secretsmanager get-secret-value \
     --query SecretString \
     --output text)
 
+# ✅ Fail fast if secret fetch fails
+if [ -z "$SECRET_JSON" ]; then
+    echo "❌ Failed to fetch secrets from AWS Secrets Manager"
+    exit 1
+fi
+
 echo "$SECRET_JSON" > secret.json
 
-echo "==> Creating .env..."
+echo "==> Creating .env file..."
 
-python3 - << PYEOF
+python3 - <<PYEOF
 import json
 
 with open("secret.json") as f:
@@ -124,12 +130,15 @@ PYEOF
 
 rm -f secret.json
 
+echo "==> Moving .env to project directory..."
 mv .env $PROJECT_DIR/.env
 
+echo "==> Starting containers..."
 cd $PROJECT_DIR
 docker compose up -d
 
-docker exec nginx nginx -s reload
+echo "==> Reloading nginx..."
+docker exec nginx nginx -s reload || true
 
 echo "==> Deploy complete: $IMAGE_TAG"
 EOF
@@ -137,20 +146,6 @@ EOF
                 }
             }
         }
-
-        // stage('Start Monitoring') {
-        //     steps {
-        //         sshagent(credentials: ['backend-ssh-key']) {
-        //             sh """
-        //                 ssh -o StrictHostKeyChecking=no ubuntu@${PRIVATE_EC2_IP} '
-        //                     cd ${PROJECT_DIR} &&
-        //                     docker compose -f docker-compose.monitoring.yml up -d
-        //                 '
-        //             """
-        //         }
-        //     }
-        // }
-
     }
 
     post {
