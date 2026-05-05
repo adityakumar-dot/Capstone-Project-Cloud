@@ -84,17 +84,51 @@ pipeline {
             steps {
                 sshagent(credentials: ['backend-ssh-key']) {
                     sh """
-    ssh -o StrictHostKeyChecking=no ubuntu@${PRIVATE_EC2_IP} << EOF
+ssh -o StrictHostKeyChecking=no ubuntu@${PRIVATE_EC2_IP} << 'EOF'
 set -e
 
+echo "==> Logging into ECR..."
 aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
 
-sed -i "s|IMAGE_TAG=.*|IMAGE_TAG=${IMAGE_TAG}|" ${PROJECT_DIR}/.env
-sed -i "s|ECR_REGISTRY=.*|ECR_REGISTRY=${ECR_REGISTRY}|" ${PROJECT_DIR}/.env
+echo "==> Fetching secrets from AWS..."
 
+SECRET_JSON=$(aws secretsmanager get-secret-value \
+    --region ${AWS_REGION} \
+    --secret-id project/prod/env \
+    --query SecretString \
+    --output text)
+
+echo "$SECRET_JSON" > secret.json
+
+echo "==> Creating .env file..."
+
+python3 - <<PYEOF
+import json
+
+with open("secret.json") as f:
+    data = json.load(f)
+
+with open(".env", "w") as f:
+    for k, v in data.items():
+        f.write(f"{k}={v}\\n")
+
+# append dynamic values
+with open(".env", "a") as f:
+    f.write("ECR_REGISTRY=${ECR_REGISTRY}\\n")
+    f.write("IMAGE_TAG=${IMAGE_TAG}\\n")
+PYEOF
+
+rm -f secret.json
+
+echo "==> Moving .env to project directory..."
+mv .env ${PROJECT_DIR}/.env
+
+echo "==> Deploying containers..."
 cd ${PROJECT_DIR}
 docker compose up -d
+
 docker exec nginx nginx -s reload
+
 echo "==> Deploy complete: ${IMAGE_TAG}"
 EOF
 """
