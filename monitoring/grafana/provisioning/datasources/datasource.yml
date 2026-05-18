@@ -1,3 +1,5 @@
+#tells grafana: get your data from prometheus at this URL
+
 apiVersion: 1
 
 deleteDatasources:

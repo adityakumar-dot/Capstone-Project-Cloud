@@ -1,3 +1,5 @@
+# tells grafana: load dashboard JSON files from this folder
+
 apiVersion: 1
 providers:
   - name: default

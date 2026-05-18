@@ -73,7 +73,7 @@ pipeline {
                 sshagent(credentials: ['backend-ssh-key']) {
                     sh """
                         scp -r -o StrictHostKeyChecking=no \
-                            compose.yaml nginx.conf monitoring \
+                            compose.yaml nginx.conf monitoring monitoring.yaml \
                             ubuntu@${PRIVATE_EC2_IP}:${PROJECT_DIR}/
                     """
                 }
@@ -135,10 +135,12 @@ mv .env $PROJECT_DIR/.env
 
 echo "==> Starting containers..."
 cd $PROJECT_DIR
-docker compose up -d
+docker compose up -d --wait --remove-orphans
 
 echo "==> Reloading nginx..."
 docker exec nginx nginx -s reload || true
+
+docker compose -f monitoring.yaml up -d --wait
 
 echo "==> Deploy complete: $IMAGE_TAG"
 EOF

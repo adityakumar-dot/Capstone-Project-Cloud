@@ -1,3 +1,5 @@
+#Recieved fired alerts from prometheous and handels them
+
 global:
   resolve_timeout: 5m
 

@@ -2,11 +2,13 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+#tell prometheus where is alertmanager
 alerting:
   alertmanagers:
     - static_configs:
         - targets: ['cloud3tier-alertmanager:9093']
 
+#load our alert rules
 rule_files:
   - '/etc/prometheus/alerts.yml'
 
