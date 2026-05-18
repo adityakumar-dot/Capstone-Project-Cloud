@@ -24,8 +24,8 @@ services :
       - '-nginx.scrape-uri=http://nginx:80/nginx_status'
     ports:
       - "9113:9113"
-    depends_on:
-      - nginx
+    # depends_on:
+    #   - nginx
     networks:
       - monitoring
 
